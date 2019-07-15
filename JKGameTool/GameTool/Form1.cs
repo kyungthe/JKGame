@@ -12,38 +12,53 @@ namespace GameTool
 {
     public partial class Form1 : Form
     {
-        // 점선의 점 간격
-        private float dotInterval = 2.0f;
-        // 격자 간격(Point 단위)
-        private float gridInterval;
-        private float pixelPerPoint;
-        private int point = 20;
         private Pen pen;
         private State currentState;
+        private GridManager gridManager;
 
         public Form1()
         {
             InitializeComponent();
-            InitializePaintValues();
+            InitializeGrid();
             currentState = new CreateUINoneState(this);
             SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
             SetStyle(ControlStyles.AllPaintingInWmPaint, true);
             SetStyle(ControlStyles.UserPaint, true);
         }
 
-        private void InitializePaintValues()
+        private void InitializeGrid()
         {
             Graphics graphics = Graphics.FromHwnd(IntPtr.Zero);
             Color color = ForeColor;
             pen = new Pen(color);
 
-            pen.Width = dotInterval;
+            pen.Width = 2.0f;
 
             // Point : Pixel = 72 : DPI
             // Point를 알고 있을 때 Pixel = (Point * DPI) / 72
             float dpi = graphics.DpiX;
-            pixelPerPoint = dpi / 72;
-            gridInterval = pixelPerPoint * point;
+            float pixelPerPoint = dpi / 72;
+            int point = 20;
+            float gridPixelInterval = pixelPerPoint * point;
+
+            int startX = 0;
+            int startY = 0;
+            int width = (int)((CreateButtonButton.Location.X - 10) / gridPixelInterval);
+            int height = (int)(ClientSize.Height / gridPixelInterval);
+
+            pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dot;
+
+            gridManager = new GridManager();
+
+            //세로 그리기
+            for (int x = startX; x < width; ++x)
+            {
+                for (int y = startY; y < height; ++y)
+                {
+                    Grid grid = new Grid(x, y, gridPixelInterval);
+                    gridManager.AddGrid(grid);
+                }
+            }
         }
 
         private void Form1_Paint(object sender, PaintEventArgs e)
@@ -80,24 +95,9 @@ namespace GameTool
 
         public void DrawGrid(Graphics graphics)
         {
-            float startX = Width - ClientSize.Width;
-            float startY = Height - ClientSize.Height;
-            float width = CreateButtonButton.Location.X - 10;
-            float height = ClientSize.Height;
-
             pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dot;
 
-            //세로 그리기
-            for (float x = startX / gridInterval; x < width; x += gridInterval)
-            {
-                graphics.DrawLine(pen, x, 0, x, height);
-            }
-
-            //가로 그리기
-            for (float y = startY / gridInterval; y < height; y += gridInterval)
-            {
-                graphics.DrawLine(pen, 0, y, width, y);
-            }
+            gridManager.DrawGrid(graphics, pen);
         }
 
         public void DrawButton(Graphics graphics, int startX, int startY, int endX, int endY)
