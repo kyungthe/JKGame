@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -9,36 +10,47 @@ namespace GameTool
 {
     class Grid
     {
-        private float x;
-        private float y;
-        private float interval;
+        private int startX;
+        private int startY;
+        private int endX;
+        private int endY;
 
-        public Grid(float x, float y, float interval)
+        public int X { get => startX; set => startX = value; }
+        public int Y { get => startY; set => startY = value; }
+
+        public Grid(int startX, int startY, int endX, int endY)
         {
-            this.x = x;
-            this.y = y;
-            this.interval = interval;
+            this.startX = startX;
+            this.startY = startY;
+            this.endX = endX;
+            this.endY = endY;
         }
 
-        public void DrawGrid(Graphics graphics, Pen pen)
+        public void DrawGrid(Graphics graphics, Pen pen, int pixelInterval)
         {
-            float pixelX = x * interval;
-            float pixelY = y * interval;
+            float pixelStartX = startX * pixelInterval;
+            float pixelStartY = startY * pixelInterval;
+            float pixelEndX = endX * pixelInterval;
+            float pixelEndY = endY * pixelInterval;
 
-            graphics.DrawLine(pen, pixelX,              pixelY,             pixelX + interval,  pixelY);
-            graphics.DrawLine(pen, pixelX,              pixelY,             pixelX,             pixelY + interval);
-            graphics.DrawLine(pen, pixelX + interval,   pixelY,             pixelX + interval,  pixelY + interval);
-            graphics.DrawLine(pen, pixelX,              pixelY + interval,  pixelX + interval,  pixelY + interval);
+            graphics.DrawLine(pen, pixelStartX, pixelStartY, pixelEndX, pixelStartY);
+            graphics.DrawLine(pen, pixelStartX, pixelStartY, pixelStartX, pixelEndY);
+            graphics.DrawLine(pen, pixelStartX, pixelEndY, pixelEndX, pixelEndY);
+            graphics.DrawLine(pen, pixelEndX, pixelStartY, pixelEndX, pixelEndY);
         }
     }
 
     class GridManager
     {
         private List<Grid> gridList;
+        private int gridPixelInterval;
 
-        public GridManager()
+        public int GridPixelInterval { get => gridPixelInterval; set => gridPixelInterval = value; }
+
+        public GridManager(int gridPixelInterval)
         {
             gridList = new List<Grid>();
+            SetGridPixelInterval(gridPixelInterval);
         }
 
         public void AddGrid(Grid grid)
@@ -50,8 +62,30 @@ namespace GameTool
         {
             foreach(Grid grid in gridList)
             {
-                grid.DrawGrid(graphics, pen);
+                grid.DrawGrid(graphics, pen, gridPixelInterval);
             }
+        }
+
+        public void SetGridPixelInterval(int gridPixelInterval)
+        {
+            this.gridPixelInterval = gridPixelInterval;
+        }
+
+        public Grid FindGrid(int pixelX, int pixelY)
+        {
+            int x = pixelX / (int)gridPixelInterval;
+            int y = pixelY / (int)gridPixelInterval;
+
+            foreach(Grid grid in gridList)
+            {
+                if((grid.X == x) && (grid.Y == y))
+                {
+                    return grid;
+                }
+            }
+
+            Debug.WriteLine("Grid를 찾을 수 없다! pixelX : {0}, pixelY : {1}, x : {2}, y : {3}", pixelX, pixelY, x, y);
+            return null;
         }
     }
 }

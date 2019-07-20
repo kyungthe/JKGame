@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -15,6 +16,8 @@ namespace GameTool
         private Pen pen;
         private State currentState;
         private GridManager gridManager;
+
+        internal GridManager GridManager { get => gridManager; set => gridManager = value; }
 
         public Form1()
         {
@@ -32,6 +35,7 @@ namespace GameTool
             Color color = ForeColor;
             pen = new Pen(color);
 
+            // 점선의 점 간격
             pen.Width = 2.0f;
 
             // Point : Pixel = 72 : DPI
@@ -39,7 +43,7 @@ namespace GameTool
             float dpi = graphics.DpiX;
             float pixelPerPoint = dpi / 72;
             int point = 20;
-            float gridPixelInterval = pixelPerPoint * point;
+            int gridPixelInterval = (int)pixelPerPoint * point;
 
             int startX = 0;
             int startY = 0;
@@ -48,15 +52,15 @@ namespace GameTool
 
             pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dot;
 
-            gridManager = new GridManager();
+            GridManager = new GridManager(gridPixelInterval);
 
             //세로 그리기
             for (int x = startX; x < width; ++x)
             {
                 for (int y = startY; y < height; ++y)
                 {
-                    Grid grid = new Grid(x, y, gridPixelInterval);
-                    gridManager.AddGrid(grid);
+                    Grid grid = new Grid(x, y, x + 1, y + 1);
+                    GridManager.AddGrid(grid);
                 }
             }
         }
@@ -97,22 +101,22 @@ namespace GameTool
         {
             pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dot;
 
-            gridManager.DrawGrid(graphics, pen);
+            GridManager.DrawGrid(graphics, pen);
         }
 
         public void DrawButton(Graphics graphics, int startX, int startY, int endX, int endY)
         {
             pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Solid;
 
-            int width = endX - startX;
-            int height = endY - startY;
+            int x = startX / gridManager.GridPixelInterval;
+            int y = startY / gridManager.GridPixelInterval;
+            int width = endX / gridManager.GridPixelInterval;
+            int height = endY / gridManager.GridPixelInterval;
 
-            if ((width <= 0) || (height <= 0))
-            {
-                return;
-            }
-            
-            graphics.DrawRectangle(pen, new Rectangle(startX, startY, width, height));
+            Debug.WriteLine("x : {0}, y : {1}, width : {2}, height : {3}", x, y, width, height);
+
+            Grid grid = new Grid(x, y, width, height);
+            grid.DrawGrid(graphics, pen, gridManager.GridPixelInterval);
         }
 
         private void Form1_MouseDown(object sender, MouseEventArgs e)
